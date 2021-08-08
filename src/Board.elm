@@ -47,28 +47,10 @@ putBlock : List (Vec Int) -> Cell -> Board -> Board
 putBlock positions cell board =
     List.indexedMap
         (\i c ->
-            let
-                { x, y } = indexToVec i
-            in
             if List.any (Vec.equal (indexToVec i)) positions then
                 cell
             else
                 c
-        )
-        board
-
-
-
-maskMino : List (Position Cell) -> Board -> Board
-maskMino positions board =
-    List.indexedMap
-        (\i c ->
-            case getCellAtSamePosition (indexToVec i) positions of
-                Just cell ->
-                    cell
-
-                Nothing ->
-                    c
         )
         board
 
