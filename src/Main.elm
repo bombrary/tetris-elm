@@ -314,11 +314,26 @@ viewBoard state board =
             (Board.toPositions <| Board.clip (Board.height - boardHeight) <| maskMinoIfPossible state board)
         )
 
+toAbsolute : MinoState -> List (Vec Int)
+toAbsolute { mino, pos, rot } =
+  let
+    ({ rotMax } as info) = Mino.info mino
+    rotMod = modBy rotMax rot
+  in
+    List.map (Vec.add pos << Util.applyN rotMod Vec.rotate90) (Mino.positions info)
+
 
 maskMinoIfPossible : Maybe MinoState -> Board -> Board
 maskMinoIfPossible stateMay board =
-    Maybe.withDefault board <|
-        Maybe.map (\state -> Board.maskMino (stateToPositions state) board) stateMay
+    case stateMay of
+        Just ({ mino } as state) ->
+            let
+                { color } = Mino.info mino
+            in
+            Board.putBlock (toAbsolute state) (Block color) board
+
+        Nothing ->
+            board
 
 
 stateToPositions : MinoState -> List (Position Cell)

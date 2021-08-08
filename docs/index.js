@@ -8408,24 +8408,13 @@ var $author$project$Mino$info = function (mino) {
 				A2($author$project$Vec$Vec, 1, 0));
 	}
 };
-var $author$project$Util$applyN = F3(
-	function (n, f, x0) {
-		var go = F2(
-			function (cnt, x) {
-				go:
-				while (true) {
-					if (cnt <= 0) {
-						return x;
-					} else {
-						var $temp$cnt = cnt - 1,
-							$temp$x = f(x);
-						cnt = $temp$cnt;
-						x = $temp$x;
-						continue go;
-					}
-				}
-			});
-		return A2(go, n, x0);
+var $author$project$Util$applyN = F2(
+	function (n, f) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$Basics$composeL,
+			$elm$core$Basics$identity,
+			A2($elm$core$List$repeat, n, f));
 	});
 var $author$project$Mino$positions = function (_v0) {
 	var p1 = _v0.p1;
@@ -8689,56 +8678,53 @@ var $author$project$Main$fallDown = function (model) {
 				minoState)
 		}) : model;
 };
-var $author$project$Board$getCellAtSamePosition = F2(
-	function (v, positions) {
-		return $elm$core$List$head(
-			A2(
-				$elm$core$List$map,
-				function (_v1) {
-					var val = _v1.val;
-					return val;
-				},
-				A2(
-					$elm$core$List$filter,
-					function (_v0) {
-						var pos = _v0.pos;
-						return A2($author$project$Vec$equal, v, pos);
-					},
-					positions)));
-	});
-var $author$project$Board$maskMino = F2(
-	function (positions, board) {
+var $author$project$Board$putBlock = F3(
+	function (positions, cell, board) {
 		return A2(
 			$elm$core$List$indexedMap,
 			F2(
 				function (i, c) {
-					var _v0 = A2(
-						$author$project$Board$getCellAtSamePosition,
-						$author$project$Board$indexToVec(i),
-						positions);
-					if (_v0.$ === 'Just') {
-						var cell = _v0.a;
-						return cell;
-					} else {
-						return c;
-					}
+					var _v0 = $author$project$Board$indexToVec(i);
+					var x = _v0.x;
+					var y = _v0.y;
+					return A2(
+						$elm$core$List$any,
+						$author$project$Vec$equal(
+							$author$project$Board$indexToVec(i)),
+						positions) ? cell : c;
 				}),
 			board);
 	});
+var $author$project$Main$toAbsolute = function (_v0) {
+	var mino = _v0.mino;
+	var pos = _v0.pos;
+	var rot = _v0.rot;
+	var info = $author$project$Mino$info(mino);
+	var rotMax = info.rotMax;
+	var rotMod = A2($elm$core$Basics$modBy, rotMax, rot);
+	return A2(
+		$elm$core$List$map,
+		A2(
+			$elm$core$Basics$composeL,
+			$author$project$Vec$add(pos),
+			A2($author$project$Util$applyN, rotMod, $author$project$Vec$rotate90)),
+		$author$project$Mino$positions(info));
+};
 var $author$project$Main$maskMinoIfPossible = F2(
 	function (stateMay, board) {
-		return A2(
-			$elm$core$Maybe$withDefault,
-			board,
-			A2(
-				$elm$core$Maybe$map,
-				function (state) {
-					return A2(
-						$author$project$Board$maskMino,
-						$author$project$Main$stateToPositions(state),
-						board);
-				},
-				stateMay));
+		if (stateMay.$ === 'Just') {
+			var state = stateMay.a;
+			var mino = state.mino;
+			var _v1 = $author$project$Mino$info(mino);
+			var color = _v1.color;
+			return A3(
+				$author$project$Board$putBlock,
+				$author$project$Main$toAbsolute(state),
+				$author$project$Board$Block(color),
+				board);
+		} else {
+			return board;
+		}
 	});
 var $author$project$Main$setLifeTime = F2(
 	function (t, state) {
