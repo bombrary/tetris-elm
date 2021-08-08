@@ -69,8 +69,8 @@ main =
 type alias Model =
     { board : Board
     , time : Int
-    , keyDown : Maybe Key
-    , key : KeyState
+    , keyPress : KeyPressFlags
+    , keys : KeyStates
     , minoState : Maybe MinoState
     , minoQueue : MinoQueue Mino
     , lines : Int
@@ -82,7 +82,7 @@ type alias Model =
 type Msg
     = NoMsg
     | KeyDown Key
-    | KeyUp
+    | KeyUp Key
     | Tick Time.Posix
     | GetSeed Seed
 
@@ -105,9 +105,33 @@ type Key
 
 
 type KeyState
-    = KeyNotPressed
-    | KeyDowned Key
-    | KeyPressing Key
+    = KeyIdle
+    | KeyPressed
+    | KeyPressing
+
+
+type alias KeyPressFlags =
+    { z : Bool
+    , x : Bool
+    , left : Bool
+    , right : Bool
+    , up : Bool
+    , down : Bool
+    }
+
+
+type alias KeyStates =
+    { z : KeyState
+    , x : KeyState
+    , left : KeyState
+    , right : KeyState
+    , up : KeyState
+    , down : KeyState
+    }
+
+
+
+-- INIT
 
 
 initMinoState : Mino -> MinoState
@@ -119,16 +143,34 @@ initMinoState mino =
     }
 
 
+initKeyStates : KeyStates
+initKeyStates =
+    { x = KeyIdle
+    , z = KeyIdle
+    , left = KeyIdle
+    , right = KeyIdle
+    , up = KeyIdle
+    , down = KeyIdle
+    }
 
--- INIT
+
+initKeyPressFlags : KeyPressFlags
+initKeyPressFlags =
+    { x = False
+    , z = False
+    , left = False
+    , right = False
+    , up = False
+    , down = False
+    }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { board = Board.init
       , time = 0
-      , keyDown = Nothing
-      , key = KeyNotPressed
+      , keyPress = initKeyPressFlags
+      , keys = initKeyStates
       , minoState = Nothing
       , minoQueue = MinoQueue.empty
       , lines = 0
@@ -296,6 +338,8 @@ viewTetrisDescription model =
             , H.p [] [ H.text "↓ ↑: Soft and hard drop" ]
             , H.p [] [ H.text "Z X: Rotate" ]
             ]
+        , H.div []
+            [ H.text (Debug.toString model.keys) ]
         ]
 
 
@@ -314,12 +358,16 @@ viewBoard state board =
             (Board.toPositions <| Board.clip (Board.height - boardHeight) <| maskMinoIfPossible state board)
         )
 
+
 toAbsolute : MinoState -> List (Vec Int)
 toAbsolute { mino, pos, rot } =
-  let
-    ({ rotMax } as info) = Mino.info mino
-    rotMod = modBy rotMax rot
-  in
+    let
+        ({ rotMax } as info) =
+            Mino.info mino
+
+        rotMod =
+            modBy rotMax rot
+    in
     List.map (Vec.add pos << Util.applyN rotMod Vec.rotate90) (Mino.positions info)
 
 
@@ -328,7 +376,8 @@ maskMinoIfPossible stateMay board =
     case stateMay of
         Just ({ mino } as state) ->
             let
-                { color } = Mino.info mino
+                { color } =
+                    Mino.info mino
             in
             Board.putBlock (toAbsolute state) (Block color) board
 
@@ -417,18 +466,18 @@ update msg model =
             ( model, Cmd.none )
 
         KeyDown newKey ->
-            ( { model | keyDown = Just newKey }
+            ( { model | keyPress = updateKeyPress newKey True model.keyPress }
             , Cmd.none
             )
 
-        KeyUp ->
-            ( { model | keyDown = Nothing }
+        KeyUp newKey ->
+            ( { model | keyPress = updateKeyPress newKey False model.keyPress }
             , Cmd.none
             )
 
         Tick _ ->
             ( elapseTime model
-                |> (\m -> { m | key = updateKeyState m.keyDown m.key })
+                |> (\m -> { m | keys = updateKeyStates m.keyPress m.keys })
                 |> handleKey
                 |> fallDown
                 |> fixMinoIfPossible
@@ -449,39 +498,85 @@ elapseTime model =
     { model | time = model.time + 1 }
 
 
-updateKeyState : Maybe Key -> KeyState -> KeyState
-updateKeyState keyMay state =
-    case keyMay of
-        Just newKey ->
-            case state of
-                KeyDowned key ->
-                    if key == newKey then
-                        KeyPressing key
 
-                    else
-                        KeyDowned newKey
+updateKeyPress : Key -> Bool -> KeyPressFlags -> KeyPressFlags
+updateKeyPress key keyDowned flags =
+    case key of
+        Z ->
+            { flags | z = keyDowned }
 
-                KeyPressing key ->
-                    if key == newKey then
-                        KeyPressing key
+        X ->
+            { flags | x = keyDowned }
 
-                    else
-                        KeyDowned newKey
+        Left ->
+            { flags | left = keyDowned }
 
-                KeyNotPressed ->
-                    KeyDowned newKey
+        Right ->
+            { flags | right = keyDowned }
 
-        Nothing ->
-            KeyNotPressed
+        Up ->
+            { flags | up = keyDowned }
+
+        Down ->
+            { flags | down = keyDowned }
+
+
+updateKeyStates : KeyPressFlags -> KeyStates -> KeyStates
+updateKeyStates flags ({ z, x, down, up, left, right } as state) =
+    { state
+        | z = updateKeyState flags.z z
+        , x = updateKeyState flags.x x
+        , down = updateKeyState flags.down down
+        , up = updateKeyState flags.up up
+        , left = updateKeyState flags.left left
+        , right = updateKeyState flags.right right
+        }
+
+
+updateKeyState : Bool -> KeyState -> KeyState
+updateKeyState keyDowned state =
+    case state of
+        KeyIdle ->
+            if keyDowned then
+                KeyPressed
+
+            else
+                KeyIdle
+
+        KeyPressed ->
+            if keyDowned then
+                KeyPressing
+
+            else
+                KeyIdle
+
+        KeyPressing ->
+            if keyDowned then
+                KeyPressing
+
+            else
+                KeyIdle
 
 
 handleKey : Model -> Model
-handleKey ({ key, time, minoState, board } as model) =
-    case key of
-        KeyNotPressed ->
-            model
+handleKey ({ keys } as model) =
+    let
+        { z, x, left, right, up, down } =
+            keys
+    in
+    model
+        |> handleKeyZ z
+        |> handleKeyX x
+        |> handleKeyLeft left
+        |> handleKeyRight right
+        |> handleKeyUp up
+        |> handleKeyDown down
 
-        KeyDowned Z ->
+
+handleKeyZ : KeyState -> Model -> Model
+handleKeyZ state ({ board, minoState } as model) =
+    case state of
+        KeyPressed ->
             { model
                 | minoState =
                     Maybe.map
@@ -489,7 +584,14 @@ handleKey ({ key, time, minoState, board } as model) =
                         minoState
             }
 
-        KeyDowned X ->
+        _ ->
+            model
+
+
+handleKeyX : KeyState -> Model -> Model
+handleKeyX state ({ board, minoState } as model) =
+    case state of
+        KeyPressed ->
             { model
                 | minoState =
                     Maybe.map
@@ -497,18 +599,46 @@ handleKey ({ key, time, minoState, board } as model) =
                         minoState
             }
 
-        KeyDowned Left ->
+        _ ->
+            model
+
+
+handleKeyLeft : KeyState -> Model -> Model
+handleKeyLeft state ({ board, minoState } as model) =
+    case state of
+        KeyPressed ->
             { model | minoState = Maybe.map (moveIfPossible -1 0 board) minoState }
 
-        KeyDowned Right ->
+        _ ->
+            model
+
+
+handleKeyRight : KeyState -> Model -> Model
+handleKeyRight state ({ board, minoState } as model) =
+    case state of
+        KeyPressed ->
             { model | minoState = Maybe.map (moveIfPossible 1 0 board) minoState }
 
-        KeyDowned Up ->
+        _ ->
+            model
+
+
+handleKeyUp : KeyState -> Model -> Model
+handleKeyUp state ({ board, minoState } as model) =
+    case state of
+        KeyPressed ->
             { model
                 | minoState = Maybe.map (setLifeTime 0 << hardDrop board) minoState
             }
 
-        KeyPressing Down ->
+        _ ->
+            model
+
+
+handleKeyDown : KeyState -> Model -> Model
+handleKeyDown state ({ time, minoState, board } as model) =
+    case state of
+        KeyPressing ->
             if modBy 5 time == 0 then
                 { model | minoState = Maybe.map (moveIfPossible 0 1 board) minoState }
 
@@ -699,32 +829,32 @@ checkGameOver model =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Browser.Events.onKeyDown (D.map toKey (D.field "key" D.string))
-        , Browser.Events.onKeyUp (D.succeed KeyUp)
+        [ Browser.Events.onKeyDown (D.map (toKey KeyDown) (D.field "key" D.string))
+        , Browser.Events.onKeyUp (D.map (toKey KeyUp) (D.field "key" D.string))
         , Browser.Events.onAnimationFrame Tick
         ]
 
 
-toKey : String -> Msg
-toKey key =
+toKey : (Key -> Msg) -> String -> Msg
+toKey f key =
     case key of
         "z" ->
-            KeyDown Z
+            f Z
 
         "x" ->
-            KeyDown X
+            f X
 
         "ArrowUp" ->
-            KeyDown Up
+            f Up
 
         "ArrowDown" ->
-            KeyDown Down
+            f Down
 
         "ArrowLeft" ->
-            KeyDown Left
+            f Left
 
         "ArrowRight" ->
-            KeyDown Right
+            f Right
 
         _ ->
             NoMsg
