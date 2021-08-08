@@ -386,14 +386,12 @@ maskMinoIfPossible stateMay board =
 
 
 stateToPositions : MinoState -> List (Position Cell)
-stateToPositions { rot, mino, pos } =
+stateToPositions ({ mino } as state) =
     let
-        info =
-            Mino.info mino
+        ({ color } as info) = Mino.info mino
     in
-    Mino.rotate (modBy info.rotMax rot) mino
-        |> List.map (Vec.add pos)
-        |> List.map (\v -> { pos = v, val = Block info.color })
+    toAbsolute state
+        |> List.map (\v -> { pos = v, val = Block color })
 
 
 viewCell : Cell -> Svg Msg
