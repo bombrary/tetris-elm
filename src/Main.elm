@@ -338,8 +338,6 @@ viewTetrisDescription model =
             , H.p [] [ H.text "↓ ↑: Soft and hard drop" ]
             , H.p [] [ H.text "Z X: Rotate" ]
             ]
-        , H.div []
-            [ H.text (Debug.toString model.keys) ]
         ]
 
 
@@ -388,7 +386,8 @@ maskMinoIfPossible stateMay board =
 stateToPositions : MinoState -> List (Position Cell)
 stateToPositions ({ mino } as state) =
     let
-        ({ color } as info) = Mino.info mino
+        ({ color } as info) =
+            Mino.info mino
     in
     toAbsolute state
         |> List.map (\v -> { pos = v, val = Block color })
@@ -496,7 +495,6 @@ elapseTime model =
     { model | time = model.time + 1 }
 
 
-
 updateKeyPress : Key -> Bool -> KeyPressFlags -> KeyPressFlags
 updateKeyPress key keyDowned flags =
     case key of
@@ -528,7 +526,7 @@ updateKeyStates flags ({ z, x, down, up, left, right } as state) =
         , up = updateKeyState flags.up up
         , left = updateKeyState flags.left left
         , right = updateKeyState flags.right right
-        }
+    }
 
 
 updateKeyState : Bool -> KeyState -> KeyState
