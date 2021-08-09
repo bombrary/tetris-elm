@@ -383,16 +383,6 @@ maskMinoIfPossible stateMay board =
             board
 
 
-stateToPositions : MinoState -> List (Position Cell)
-stateToPositions ({ mino } as state) =
-    let
-        ({ color } as info) =
-            Mino.info mino
-    in
-    toAbsolute state
-        |> List.map (\v -> { pos = v, val = Block color })
-
-
 viewCell : Cell -> Svg Msg
 viewCell cell =
     case cell of
@@ -666,12 +656,11 @@ hardDrop board ({ pos } as state) =
         newState =
             { state | pos = Vec.add (Vec 0 1) pos }
     in
-    case Board.overlapped (stateToPositions newState) board of
-        Just _ ->
-            state
+    if Board.overlapped (toAbsolute newState) board then
+        state
 
-        Nothing ->
-            hardDrop board newState
+    else
+        hardDrop board newState
 
 
 tryKickList : List (Vec Int) -> Int -> Board -> MinoState -> MinoState
@@ -688,12 +677,11 @@ tryKickList kickList dr board state =
                         , rot = state.rot + dr
                     }
             in
-            case Board.overlapped (stateToPositions newState) board of
-                Just _ ->
-                    tryKickList ks dr board state
+            if Board.overlapped (toAbsolute newState) board then
+                tryKickList ks dr board state
 
-                Nothing ->
-                    newState
+            else
+                newState
 
 
 moveIfPossible : Int -> Int -> Board -> MinoState -> MinoState
@@ -702,12 +690,11 @@ moveIfPossible dx dy board ({ pos } as state) =
         newState =
             { state | pos = Vec.add { x = dx, y = dy } pos }
     in
-    case Board.overlapped (stateToPositions newState) board of
-        Just _ ->
-            state
+    if Board.overlapped (toAbsolute newState) board then
+        state
 
-        Nothing ->
-            newState
+    else
+        newState
 
 
 fallDown : Model -> Model
@@ -727,23 +714,22 @@ fixMinoIfPossible ({ minoState, board } as model) =
                 newState =
                     { state | pos = Vec.add { x = 0, y = 1 } state.pos }
             in
-            case Board.overlapped (stateToPositions newState) board of
-                Just _ ->
-                    case state.lifeTime of
-                        Just 0 ->
-                            { model
-                                | minoState = Nothing
-                                , board = maskMinoIfPossible minoState board
-                            }
+            if Board.overlapped (toAbsolute newState) board then
+                case state.lifeTime of
+                    Just 0 ->
+                        { model
+                            | minoState = Nothing
+                            , board = maskMinoIfPossible minoState board
+                        }
 
-                        Just t ->
-                            { model | minoState = Just <| setLifeTime (t - 1) state }
+                    Just t ->
+                        { model | minoState = Just <| setLifeTime (t - 1) state }
 
-                        Nothing ->
-                            { model | minoState = Just <| startLifeTime state }
+                    Nothing ->
+                        { model | minoState = Just <| startLifeTime state }
 
-                Nothing ->
-                    model
+            else
+                model
 
         Nothing ->
             model
@@ -807,12 +793,11 @@ checkGameOver : Model -> Model
 checkGameOver model =
     case model.minoState of
         Just state ->
-            case Board.overlapped (stateToPositions state) model.board of
-                Just _ ->
-                    { model | gameOver = True }
+            if Board.overlapped (toAbsolute state) model.board then
+                { model | gameOver = True }
 
-                Nothing ->
-                    { model | minoState = Just state }
+            else
+                { model | minoState = Just state }
 
         Nothing ->
             model

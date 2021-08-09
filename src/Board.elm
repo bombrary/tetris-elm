@@ -55,33 +55,15 @@ putBlock positions cell board =
         board
 
 
-overlapped : List (Position Cell) -> Board -> Maybe (Vec Int)
+overlapped : List (Vec Int) -> Board -> Bool
 overlapped positions board =
-    maybeOr (overlappedWall positions) (overlappedBoard positions board)
+    (overlappedWall positions) || (overlappedBoard positions board)
 
 
-maybeOr : Maybe a -> Maybe a -> Maybe a
-maybeOr ma mb =
-    case ma of
-        Just _ ->
-            ma
 
-        Nothing ->
-            mb
-
-
-overlappedWall : List (Position Cell) -> Maybe (Vec Int)
+overlappedWall : List (Vec Int) -> Bool
 overlappedWall positions =
-    case positions of
-        [] ->
-            Nothing
-
-        { pos } :: ps ->
-            if not <| containedBoard pos then
-                Just pos
-
-            else
-                overlappedWall ps
+    List.any (not << containedBoard) positions
 
 
 containedBoard : Vec Int -> Bool
@@ -89,24 +71,15 @@ containedBoard { x, y } =
     0 <= x && x < width && y < height
 
 
-overlappedBoard : List (Position Cell) -> Board -> Maybe (Vec Int)
+overlappedBoard : List (Vec Int) -> Board -> Bool
 overlappedBoard positions board =
-    case positions of
-        [] ->
-            Nothing
-
-        p :: ps ->
-            if overlappedOne p board then
-                Just p.pos
-
-            else
-                overlappedBoard ps board
+    List.any (overlappedOne board) positions
 
 
-overlappedOne : Position Cell -> Board -> Bool
-overlappedOne p board =
+overlappedOne : Board -> Vec Int -> Bool
+overlappedOne board v =
     List.any identity <|
-        List.indexedMap (\i c -> Vec.equal (indexToVec i) p.pos && c /= Empty) board
+        List.indexedMap (\i c -> Vec.equal (indexToVec i) v && c /= Empty) board
 
 
 getCellAtSamePosition : Vec Int -> List (Position Cell) -> Maybe Cell
