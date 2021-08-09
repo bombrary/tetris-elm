@@ -136,18 +136,18 @@ rotate r mino =
             List.map (Util.applyN (modBy rotMax r) Vec.rotate90) ps
 
 
-type Orient
-    = Zero
-    | RotR
-    | RotL
-    | Two
+type Direction
+    = RotZero
+    | RotRight
+    | RotLeft
+    | RotTwo
 
 
-getOrient : Int -> Mino -> Orient
-getOrient r mino =
+getDirection : Int -> Mino -> Direction
+getDirection r mino =
     case mino of
         O ->
-            Zero
+            RotZero
 
         _ ->
             let
@@ -156,19 +156,19 @@ getOrient r mino =
             in
             case modBy rotMax r of
                 0 ->
-                    Zero
+                    RotZero
 
                 1 ->
-                    RotR
+                    RotRight
 
                 2 ->
-                    Two
+                    RotTwo
 
                 _ ->
-                    RotL
+                    RotLeft
 
 
-getKickList : Orient -> Orient -> Mino -> List (Vec Int)
+getKickList : Direction -> Direction -> Mino -> List (Vec Int)
 getKickList o1 o2 mino =
     case mino of
         I ->
@@ -181,71 +181,63 @@ getKickList o1 o2 mino =
             getKickListJLSTZ o1 o2
 
 
-getKickListJLSTZ : Orient -> Orient -> List (Vec Int)
+getKickListJLSTZ : Direction -> Direction -> List (Vec Int)
 getKickListJLSTZ o1 o2 =
-    let
-        list =
-            case ( o1, o2 ) of
-                ( Zero, RotR ) ->
-                    [ ( 0, 0 ), ( -1, 0 ), ( -1, 1 ), ( 0, -2 ), ( -1, -2 ) ]
+    case (o1, o2) of
+        (RotZero, RotRight) ->
+             [Vec 0 0, Vec -1 0, Vec -1 -1, Vec 0 2, Vec -1 2]
 
-                ( RotR, Zero ) ->
-                    [ ( 0, 0 ), ( 1, 0 ), ( 1, -1 ), ( 0, 2 ), ( 1, 2 ) ]
+        (RotRight, RotZero) ->
+             [Vec 0 0, Vec 1 0, Vec 1 1, Vec 0 -2, Vec 1 -2]
 
-                ( RotR, Two ) ->
-                    [ ( 0, 0 ), ( 1, 0 ), ( 1, -1 ), ( 0, 2 ), ( 1, 2 ) ]
+        (RotRight, RotTwo) ->
+             [Vec 0 0, Vec 1 0, Vec 1 1, Vec 0 -2, Vec 1 -2]
 
-                ( Two, RotR ) ->
-                    [ ( 0, 0 ), ( -1, 0 ), ( -1, 1 ), ( 0, -2 ), ( -1, -2 ) ]
+        (RotTwo, RotRight) ->
+             [Vec 0 0, Vec -1 0, Vec -1 -1, Vec 0 2, Vec -1 2]
 
-                ( Two, RotL ) ->
-                    [ ( 0, 0 ), ( 1, 0 ), ( 1, 1 ), ( 0, -2 ), ( 1, -2 ) ]
+        (RotTwo, RotLeft) ->
+             [Vec 0 0, Vec 1 0, Vec 1 -1, Vec 0 2, Vec 1 2]
 
-                ( RotL, Two ) ->
-                    [ ( 0, 0 ), ( -1, 0 ), ( -1, -1 ), ( 0, 2 ), ( -1, 2 ) ]
+        (RotLeft, RotTwo) ->
+             [Vec 0 0, Vec -1 0, Vec -1 1, Vec 0 -2, Vec -1 -2]
 
-                ( RotL, Zero ) ->
-                    [ ( 0, 0 ), ( -1, 0 ), ( -1, -1 ), ( 0, 2 ), ( -1, 2 ) ]
+        (RotLeft, RotZero) ->
+             [Vec 0 0, Vec -1 0, Vec -1 1, Vec 0 -2, Vec -1 -2]
 
-                ( Zero, RotL ) ->
-                    [ ( 0, 0 ), ( 1, 0 ), ( 1, 1 ), ( 0, -2 ), ( 1, -2 ) ]
+        (RotZero, RotLeft) ->
+             [Vec 0 0, Vec 1 0, Vec 1 -1, Vec 0 2, Vec 1 2]
 
-                _ ->
-                    [ ( 0, 0 ) ]
-    in
-    List.map (Vec.flipY << Vec.fromTuple) list
+        _ ->
+            [Vec 0 0]
 
 
-getKickListI : Orient -> Orient -> List (Vec Int)
+getKickListI : Direction -> Direction -> List (Vec Int)
 getKickListI o1 o2 =
-    let
-        list =
-            case ( o1, o2 ) of
-                ( Zero, RotR ) ->
-                    [ ( 0, 0 ), ( -2, 0 ), ( 1, 0 ), ( -2, -1 ), ( 1, 2 ) ]
+    case (o1, o2) of
+        (RotZero, RotRight) ->
+             [Vec 0 0, Vec -2 0, Vec 1 0, Vec -2 1, Vec 1 -2]
 
-                ( RotR, Zero ) ->
-                    [ ( 0, 0 ), ( 2, 0 ), ( -1, 0 ), ( 2, 1 ), ( -1, -2 ) ]
+        (RotRight, RotZero) ->
+             [Vec 0 0, Vec 2 0, Vec -1 0, Vec 2 -1, Vec -1 2]
 
-                ( RotR, Two ) ->
-                    [ ( 0, 0 ), ( -1, 0 ), ( 2, 0 ), ( -1, 2 ), ( 2, -1 ) ]
+        (RotRight, RotTwo) ->
+             [Vec 0 0, Vec -1 0, Vec 2 0, Vec -1 -2, Vec 2 1]
 
-                ( Two, RotR ) ->
-                    [ ( 0, 0 ), ( 1, 0 ), ( -2, 0 ), ( 1, -2 ), ( -2, 1 ) ]
+        (RotTwo, RotRight) ->
+             [Vec 0 0, Vec 1 0, Vec -2 0, Vec 1 2, Vec -2 -1]
 
-                ( Two, RotL ) ->
-                    [ ( 0, 0 ), ( 2, 0 ), ( -1, 0 ), ( 2, 1 ), ( -1, -2 ) ]
+        (RotTwo, RotLeft) ->
+             [Vec 0 0, Vec 2 0, Vec -1 0, Vec 2 -1, Vec -1 2]
 
-                ( RotL, Two ) ->
-                    [ ( 0, 0 ), ( -2, 0 ), ( 1, 0 ), ( -2, -1 ), ( 1, 2 ) ]
+        (RotLeft, RotTwo) ->
+             [Vec 0 0, Vec -2 0, Vec 1 0, Vec -2 1, Vec 1 -2]
 
-                ( RotL, Zero ) ->
-                    [ ( 0, 0 ), ( 1, 0 ), ( -2, 0 ), ( 1, -2 ), ( -2, 1 ) ]
+        (RotLeft, RotZero) ->
+             [Vec 0 0, Vec 1 0, Vec -2 0, Vec 1 2, Vec -2 -1]
 
-                ( Zero, RotL ) ->
-                    [ ( 0, 0 ), ( -1, 0 ), ( 2, 0 ), ( -1, 2 ), ( 2, -1 ) ]
+        (RotZero, RotLeft) ->
+             [Vec 0 0, Vec -1 0, Vec 2 0, Vec -1 -2, Vec 2 1]
 
-                _ ->
-                    [ ( 0, 0 ) ]
-    in
-    List.map (Vec.flipY << Vec.fromTuple) list
+        _ ->
+            [Vec 0 0]

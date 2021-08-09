@@ -649,10 +649,10 @@ rotateIfPossible : Int -> Board -> MinoState -> MinoState
 rotateIfPossible dr board ({ rot, mino } as state) =
     let
         o1 =
-            Mino.getOrient rot mino
+            Mino.getDirection rot mino
 
         o2 =
-            Mino.getOrient (rot + dr) mino
+            Mino.getDirection (rot + dr) mino
 
         kickList =
             Mino.getKickList o1 o2 mino
