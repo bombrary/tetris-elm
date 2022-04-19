@@ -5235,7 +5235,6 @@ var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Main$GetSeed = function (a) {
 	return {$: 'GetSeed', a: a};
 };
-var $author$project$Main$KeyNotPressed = {$: 'KeyNotPressed'};
 var $author$project$MinoQueue$empty = {next: _List_Nil, now: _List_Nil};
 var $elm$random$Random$Generate = function (a) {
 	return {$: 'Generate', a: a};
@@ -5446,13 +5445,16 @@ var $elm$core$List$repeat = F2(
 	});
 var $author$project$Board$width = 10;
 var $author$project$Board$init = A2($elm$core$List$repeat, $author$project$Board$width * $author$project$Board$height, $author$project$Board$Empty);
+var $author$project$Main$initKeyPressFlags = {down: false, left: false, right: false, up: false, x: false, z: false};
+var $author$project$Main$KeyIdle = {$: 'KeyIdle'};
+var $author$project$Main$initKeyStates = {down: $author$project$Main$KeyIdle, left: $author$project$Main$KeyIdle, right: $author$project$Main$KeyIdle, up: $author$project$Main$KeyIdle, x: $author$project$Main$KeyIdle, z: $author$project$Main$KeyIdle};
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
 		{
 			board: $author$project$Board$init,
 			gameOver: false,
-			key: $author$project$Main$KeyNotPressed,
-			keyDown: $elm$core$Maybe$Nothing,
+			keyPress: $author$project$Main$initKeyPressFlags,
+			keys: $author$project$Main$initKeyStates,
 			lines: 0,
 			minoQueue: $author$project$MinoQueue$empty,
 			minoState: $elm$core$Maybe$Nothing,
@@ -5461,7 +5463,12 @@ var $author$project$Main$init = function (_v0) {
 		},
 		A2($elm$random$Random$generate, $author$project$Main$GetSeed, $elm$random$Random$independentSeed));
 };
-var $author$project$Main$KeyUp = {$: 'KeyUp'};
+var $author$project$Main$KeyDown = function (a) {
+	return {$: 'KeyDown', a: a};
+};
+var $author$project$Main$KeyUp = function (a) {
+	return {$: 'KeyUp', a: a};
+};
 var $author$project$Main$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
@@ -5999,33 +6006,31 @@ var $elm$browser$Browser$Events$onKeyDown = A2($elm$browser$Browser$Events$on, $
 var $elm$browser$Browser$Events$onKeyUp = A2($elm$browser$Browser$Events$on, $elm$browser$Browser$Events$Document, 'keyup');
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Main$Down = {$: 'Down'};
-var $author$project$Main$KeyDown = function (a) {
-	return {$: 'KeyDown', a: a};
-};
 var $author$project$Main$Left = {$: 'Left'};
 var $author$project$Main$NoMsg = {$: 'NoMsg'};
 var $author$project$Main$Right = {$: 'Right'};
 var $author$project$Main$Up = {$: 'Up'};
 var $author$project$Main$X = {$: 'X'};
 var $author$project$Main$Z = {$: 'Z'};
-var $author$project$Main$toKey = function (key) {
-	switch (key) {
-		case 'z':
-			return $author$project$Main$KeyDown($author$project$Main$Z);
-		case 'x':
-			return $author$project$Main$KeyDown($author$project$Main$X);
-		case 'ArrowUp':
-			return $author$project$Main$KeyDown($author$project$Main$Up);
-		case 'ArrowDown':
-			return $author$project$Main$KeyDown($author$project$Main$Down);
-		case 'ArrowLeft':
-			return $author$project$Main$KeyDown($author$project$Main$Left);
-		case 'ArrowRight':
-			return $author$project$Main$KeyDown($author$project$Main$Right);
-		default:
-			return $author$project$Main$NoMsg;
-	}
-};
+var $author$project$Main$toKey = F2(
+	function (f, key) {
+		switch (key) {
+			case 'z':
+				return f($author$project$Main$Z);
+			case 'x':
+				return f($author$project$Main$X);
+			case 'ArrowUp':
+				return f($author$project$Main$Up);
+			case 'ArrowDown':
+				return f($author$project$Main$Down);
+			case 'ArrowLeft':
+				return f($author$project$Main$Left);
+			case 'ArrowRight':
+				return f($author$project$Main$Right);
+			default:
+				return $author$project$Main$NoMsg;
+		}
+	});
 var $author$project$Main$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$batch(
 		_List_fromArray(
@@ -6033,10 +6038,13 @@ var $author$project$Main$subscriptions = function (_v0) {
 				$elm$browser$Browser$Events$onKeyDown(
 				A2(
 					$elm$json$Json$Decode$map,
-					$author$project$Main$toKey,
+					$author$project$Main$toKey($author$project$Main$KeyDown),
 					A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string))),
 				$elm$browser$Browser$Events$onKeyUp(
-				$elm$json$Json$Decode$succeed($author$project$Main$KeyUp)),
+				A2(
+					$elm$json$Json$Decode$map,
+					$author$project$Main$toKey($author$project$Main$KeyUp),
+					A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string))),
 				$elm$browser$Browser$Events$onAnimationFrame($author$project$Main$Tick)
 			]));
 };
@@ -8241,14 +8249,6 @@ var $rtfeldman$elm_css$VirtualDom$Styled$toUnstyled = function (vdom) {
 	}
 };
 var $rtfeldman$elm_css$Html$Styled$toUnstyled = $rtfeldman$elm_css$VirtualDom$Styled$toUnstyled;
-var $author$project$Board$maybeOr = F2(
-	function (ma, mb) {
-		if (ma.$ === 'Just') {
-			return ma;
-		} else {
-			return mb;
-		}
-	});
 var $author$project$Vec$equal = F2(
 	function (v1, v2) {
 		return _Utils_eq(v1.x, v2.x) && _Utils_eq(v1.y, v2.y);
@@ -8260,7 +8260,7 @@ var $author$project$Board$indexToVec = function (i) {
 	};
 };
 var $author$project$Board$overlappedOne = F2(
-	function (p, board) {
+	function (board, v) {
 		return A2(
 			$elm$core$List$any,
 			$elm$core$Basics$identity,
@@ -8271,30 +8271,16 @@ var $author$project$Board$overlappedOne = F2(
 						return A2(
 							$author$project$Vec$equal,
 							$author$project$Board$indexToVec(i),
-							p.pos) && (!_Utils_eq(c, $author$project$Board$Empty));
+							v) && (!_Utils_eq(c, $author$project$Board$Empty));
 					}),
 				board));
 	});
 var $author$project$Board$overlappedBoard = F2(
 	function (positions, board) {
-		overlappedBoard:
-		while (true) {
-			if (!positions.b) {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var p = positions.a;
-				var ps = positions.b;
-				if (A2($author$project$Board$overlappedOne, p, board)) {
-					return $elm$core$Maybe$Just(p.pos);
-				} else {
-					var $temp$positions = ps,
-						$temp$board = board;
-					positions = $temp$positions;
-					board = $temp$board;
-					continue overlappedBoard;
-				}
-			}
-		}
+		return A2(
+			$elm$core$List$any,
+			$author$project$Board$overlappedOne(board),
+			positions);
 	});
 var $author$project$Board$containedBoard = function (_v0) {
 	var x = _v0.x;
@@ -8302,36 +8288,26 @@ var $author$project$Board$containedBoard = function (_v0) {
 	return (0 <= x) && ((_Utils_cmp(x, $author$project$Board$width) < 0) && (_Utils_cmp(y, $author$project$Board$height) < 0));
 };
 var $author$project$Board$overlappedWall = function (positions) {
-	overlappedWall:
-	while (true) {
-		if (!positions.b) {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			var pos = positions.a.pos;
-			var ps = positions.b;
-			if (!$author$project$Board$containedBoard(pos)) {
-				return $elm$core$Maybe$Just(pos);
-			} else {
-				var $temp$positions = ps;
-				positions = $temp$positions;
-				continue overlappedWall;
-			}
-		}
-	}
+	return A2(
+		$elm$core$List$any,
+		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$Board$containedBoard),
+		positions);
 };
 var $author$project$Board$overlapped = F2(
 	function (positions, board) {
-		return A2(
-			$author$project$Board$maybeOr,
-			$author$project$Board$overlappedWall(positions),
-			A2($author$project$Board$overlappedBoard, positions, board));
+		return $author$project$Board$overlappedWall(positions) || A2($author$project$Board$overlappedBoard, positions, board);
 	});
-var $author$project$Board$Block = function (a) {
-	return {$: 'Block', a: a};
-};
 var $author$project$Vec$add = F2(
 	function (v1, v2) {
 		return {x: v1.x + v2.x, y: v1.y + v2.y};
+	});
+var $author$project$Util$applyN = F2(
+	function (n, f) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$Basics$composeL,
+			$elm$core$Basics$identity,
+			A2($elm$core$List$repeat, n, f));
 	});
 var $author$project$Color$Blue = {$: 'Blue'};
 var $author$project$Color$Green = {$: 'Green'};
@@ -8408,14 +8384,6 @@ var $author$project$Mino$info = function (mino) {
 				A2($author$project$Vec$Vec, 1, 0));
 	}
 };
-var $author$project$Util$applyN = F2(
-	function (n, f) {
-		return A3(
-			$elm$core$List$foldr,
-			$elm$core$Basics$composeL,
-			$elm$core$Basics$identity,
-			A2($elm$core$List$repeat, n, f));
-	});
 var $author$project$Mino$positions = function (_v0) {
 	var p1 = _v0.p1;
 	var p2 = _v0.p2;
@@ -8433,84 +8401,35 @@ var $author$project$Vec$rotate90 = function (_v0) {
 	var y = _v0.y;
 	return {x: y, y: -x};
 };
-var $author$project$Mino$rotate = F2(
-	function (r, mino) {
-		var mInfo = $author$project$Mino$info(mino);
-		var rotMax = mInfo.rotMax;
-		var ps = $author$project$Mino$positions(mInfo);
-		if (mino.$ === 'I') {
-			var _v1 = A2($elm$core$Basics$modBy, rotMax, r);
-			switch (_v1) {
-				case 0:
-					return ps;
-				case 1:
-					return A2($elm$core$List$map, $author$project$Vec$rotate90, ps);
-				case 2:
-					return A2(
-						$elm$core$List$map,
-						$author$project$Vec$add(
-							A2($author$project$Vec$Vec, 0, 1)),
-						ps);
-				default:
-					return A2(
-						$elm$core$List$map,
-						A2(
-							$elm$core$Basics$composeL,
-							$author$project$Vec$add(
-								A2($author$project$Vec$Vec, -1, 0)),
-							$author$project$Vec$rotate90),
-						ps);
-			}
-		} else {
-			return A2(
-				$elm$core$List$map,
-				A2(
-					$author$project$Util$applyN,
-					A2($elm$core$Basics$modBy, rotMax, r),
-					$author$project$Vec$rotate90),
-				ps);
-		}
-	});
-var $author$project$Main$stateToPositions = function (_v0) {
-	var rot = _v0.rot;
+var $author$project$Main$toAbsolute = function (_v0) {
 	var mino = _v0.mino;
 	var pos = _v0.pos;
+	var rot = _v0.rot;
 	var info = $author$project$Mino$info(mino);
+	var rotMax = info.rotMax;
+	var rotMod = A2($elm$core$Basics$modBy, rotMax, rot);
 	return A2(
 		$elm$core$List$map,
-		function (v) {
-			return {
-				pos: v,
-				val: $author$project$Board$Block(info.color)
-			};
-		},
 		A2(
-			$elm$core$List$map,
+			$elm$core$Basics$composeL,
 			$author$project$Vec$add(pos),
-			A2(
-				$author$project$Mino$rotate,
-				A2($elm$core$Basics$modBy, info.rotMax, rot),
-				mino)));
+			A2($author$project$Util$applyN, rotMod, $author$project$Vec$rotate90)),
+		$author$project$Mino$positions(info));
 };
 var $author$project$Main$checkGameOver = function (model) {
 	var _v0 = model.minoState;
 	if (_v0.$ === 'Just') {
 		var state = _v0.a;
-		var _v1 = A2(
+		return A2(
 			$author$project$Board$overlapped,
-			$author$project$Main$stateToPositions(state),
-			model.board);
-		if (_v1.$ === 'Just') {
-			return _Utils_update(
-				model,
-				{gameOver: true});
-		} else {
-			return _Utils_update(
-				model,
-				{
-					minoState: $elm$core$Maybe$Just(state)
-				});
-		}
+			$author$project$Main$toAbsolute(state),
+			model.board) ? _Utils_update(
+			model,
+			{gameOver: true}) : _Utils_update(
+			model,
+			{
+				minoState: $elm$core$Maybe$Just(state)
+			});
 	} else {
 		return model;
 	}
@@ -8655,15 +8574,10 @@ var $author$project$Main$moveIfPossible = F4(
 					{x: dx, y: dy},
 					pos)
 			});
-		var _v0 = A2(
+		return A2(
 			$author$project$Board$overlapped,
-			$author$project$Main$stateToPositions(newState),
-			board);
-		if (_v0.$ === 'Just') {
-			return state;
-		} else {
-			return newState;
-		}
+			$author$project$Main$toAbsolute(newState),
+			board) ? state : newState;
 	});
 var $author$project$Main$fallDown = function (model) {
 	var time = model.time;
@@ -8678,15 +8592,15 @@ var $author$project$Main$fallDown = function (model) {
 				minoState)
 		}) : model;
 };
+var $author$project$Board$Block = function (a) {
+	return {$: 'Block', a: a};
+};
 var $author$project$Board$putBlock = F3(
 	function (positions, cell, board) {
 		return A2(
 			$elm$core$List$indexedMap,
 			F2(
 				function (i, c) {
-					var _v0 = $author$project$Board$indexToVec(i);
-					var x = _v0.x;
-					var y = _v0.y;
 					return A2(
 						$elm$core$List$any,
 						$author$project$Vec$equal(
@@ -8695,21 +8609,6 @@ var $author$project$Board$putBlock = F3(
 				}),
 			board);
 	});
-var $author$project$Main$toAbsolute = function (_v0) {
-	var mino = _v0.mino;
-	var pos = _v0.pos;
-	var rot = _v0.rot;
-	var info = $author$project$Mino$info(mino);
-	var rotMax = info.rotMax;
-	var rotMod = A2($elm$core$Basics$modBy, rotMax, rot);
-	return A2(
-		$elm$core$List$map,
-		A2(
-			$elm$core$Basics$composeL,
-			$author$project$Vec$add(pos),
-			A2($author$project$Util$applyN, rotMod, $author$project$Vec$rotate90)),
-		$author$project$Mino$positions(info));
-};
 var $author$project$Main$maskMinoIfPossible = F2(
 	function (stateMay, board) {
 		if (stateMay.$ === 'Just') {
@@ -8754,14 +8653,13 @@ var $author$project$Main$fixMinoIfPossible = function (model) {
 					{x: 0, y: 1},
 					state.pos)
 			});
-		var _v1 = A2(
+		if (A2(
 			$author$project$Board$overlapped,
-			$author$project$Main$stateToPositions(newState),
-			board);
-		if (_v1.$ === 'Just') {
-			var _v2 = state.lifeTime;
-			if (_v2.$ === 'Just') {
-				if (!_v2.a) {
+			$author$project$Main$toAbsolute(newState),
+			board)) {
+			var _v1 = state.lifeTime;
+			if (_v1.$ === 'Just') {
+				if (!_v1.a) {
 					return _Utils_update(
 						model,
 						{
@@ -8769,7 +8667,7 @@ var $author$project$Main$fixMinoIfPossible = function (model) {
 							minoState: $elm$core$Maybe$Nothing
 						});
 				} else {
-					var t = _v2.a;
+					var t = _v1.a;
 					return _Utils_update(
 						model,
 						{
@@ -8792,6 +8690,58 @@ var $author$project$Main$fixMinoIfPossible = function (model) {
 		return model;
 	}
 };
+var $author$project$Main$handleKeyDown = F2(
+	function (state, model) {
+		var time = model.time;
+		var minoState = model.minoState;
+		var board = model.board;
+		if (state.$ === 'KeyPressing') {
+			return (!A2($elm$core$Basics$modBy, 5, time)) ? _Utils_update(
+				model,
+				{
+					minoState: A2(
+						$elm$core$Maybe$map,
+						A3($author$project$Main$moveIfPossible, 0, 1, board),
+						minoState)
+				}) : model;
+		} else {
+			return model;
+		}
+	});
+var $author$project$Main$handleKeyLeft = F2(
+	function (state, model) {
+		var board = model.board;
+		var minoState = model.minoState;
+		if (state.$ === 'KeyPressed') {
+			return _Utils_update(
+				model,
+				{
+					minoState: A2(
+						$elm$core$Maybe$map,
+						A3($author$project$Main$moveIfPossible, -1, 0, board),
+						minoState)
+				});
+		} else {
+			return model;
+		}
+	});
+var $author$project$Main$handleKeyRight = F2(
+	function (state, model) {
+		var board = model.board;
+		var minoState = model.minoState;
+		if (state.$ === 'KeyPressed') {
+			return _Utils_update(
+				model,
+				{
+					minoState: A2(
+						$elm$core$Maybe$map,
+						A3($author$project$Main$moveIfPossible, 1, 0, board),
+						minoState)
+				});
+		} else {
+			return model;
+		}
+	});
 var $author$project$Main$hardDrop = F2(
 	function (board, state) {
 		hardDrop:
@@ -8805,11 +8755,10 @@ var $author$project$Main$hardDrop = F2(
 						A2($author$project$Vec$Vec, 0, 1),
 						pos)
 				});
-			var _v0 = A2(
+			if (A2(
 				$author$project$Board$overlapped,
-				$author$project$Main$stateToPositions(newState),
-				board);
-			if (_v0.$ === 'Just') {
+				$author$project$Main$toAbsolute(newState),
+				board)) {
 				return state;
 			} else {
 				var $temp$board = board,
@@ -8820,269 +8769,291 @@ var $author$project$Main$hardDrop = F2(
 			}
 		}
 	});
-var $author$project$Vec$flipY = function (v) {
-	return _Utils_update(
-		v,
-		{y: -v.y});
-};
-var $author$project$Vec$fromTuple = function (_v0) {
-	var x = _v0.a;
-	var y = _v0.b;
-	return {x: x, y: y};
-};
+var $author$project$Main$handleKeyUp = F2(
+	function (state, model) {
+		var board = model.board;
+		var minoState = model.minoState;
+		if (state.$ === 'KeyPressed') {
+			return _Utils_update(
+				model,
+				{
+					minoState: A2(
+						$elm$core$Maybe$map,
+						A2(
+							$elm$core$Basics$composeL,
+							$author$project$Main$setLifeTime(0),
+							$author$project$Main$hardDrop(board)),
+						minoState)
+				});
+		} else {
+			return model;
+		}
+	});
+var $author$project$Mino$RotLeft = {$: 'RotLeft'};
+var $author$project$Mino$RotRight = {$: 'RotRight'};
+var $author$project$Mino$RotTwo = {$: 'RotTwo'};
+var $author$project$Mino$RotZero = {$: 'RotZero'};
+var $author$project$Mino$getDirection = F2(
+	function (r, mino) {
+		if (mino.$ === 'O') {
+			return $author$project$Mino$RotZero;
+		} else {
+			var _v1 = $author$project$Mino$info(mino);
+			var rotMax = _v1.rotMax;
+			var _v2 = A2($elm$core$Basics$modBy, rotMax, r);
+			switch (_v2) {
+				case 0:
+					return $author$project$Mino$RotZero;
+				case 1:
+					return $author$project$Mino$RotRight;
+				case 2:
+					return $author$project$Mino$RotTwo;
+				default:
+					return $author$project$Mino$RotLeft;
+			}
+		}
+	});
 var $author$project$Mino$getKickListI = F2(
 	function (o1, o2) {
-		var list = function () {
-			var _v0 = _Utils_Tuple2(o1, o2);
-			_v0$8:
-			while (true) {
-				switch (_v0.a.$) {
-					case 'RotR':
-						switch (_v0.b.$) {
-							case 'Zero':
-								var _v3 = _v0.a;
-								var _v4 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(2, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(2, 1),
-										_Utils_Tuple2(-1, -2)
-									]);
-							case 'Two':
-								var _v5 = _v0.a;
-								var _v6 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(2, 0),
-										_Utils_Tuple2(-1, 2),
-										_Utils_Tuple2(2, -1)
-									]);
-							default:
-								break _v0$8;
-						}
-					case 'Two':
-						switch (_v0.b.$) {
-							case 'RotR':
-								var _v7 = _v0.a;
-								var _v8 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(-2, 0),
-										_Utils_Tuple2(1, -2),
-										_Utils_Tuple2(-2, 1)
-									]);
-							case 'RotL':
-								var _v9 = _v0.a;
-								var _v10 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(2, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(2, 1),
-										_Utils_Tuple2(-1, -2)
-									]);
-							default:
-								break _v0$8;
-						}
-					case 'RotL':
-						switch (_v0.b.$) {
-							case 'Two':
-								var _v11 = _v0.a;
-								var _v12 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-2, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(-2, -1),
-										_Utils_Tuple2(1, 2)
-									]);
-							case 'Zero':
-								var _v13 = _v0.a;
-								var _v14 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(-2, 0),
-										_Utils_Tuple2(1, -2),
-										_Utils_Tuple2(-2, 1)
-									]);
-							default:
-								break _v0$8;
-						}
-					default:
-						switch (_v0.b.$) {
-							case 'RotR':
-								var _v1 = _v0.a;
-								var _v2 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-2, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(-2, -1),
-										_Utils_Tuple2(1, 2)
-									]);
-							case 'RotL':
-								var _v15 = _v0.a;
-								var _v16 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(2, 0),
-										_Utils_Tuple2(-1, 2),
-										_Utils_Tuple2(2, -1)
-									]);
-							default:
-								break _v0$8;
-						}
-				}
+		var _v0 = _Utils_Tuple2(o1, o2);
+		_v0$8:
+		while (true) {
+			switch (_v0.a.$) {
+				case 'RotRight':
+					switch (_v0.b.$) {
+						case 'RotZero':
+							var _v3 = _v0.a;
+							var _v4 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 2, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, 2, -1),
+									A2($author$project$Vec$Vec, -1, 2)
+								]);
+						case 'RotTwo':
+							var _v5 = _v0.a;
+							var _v6 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, 2, 0),
+									A2($author$project$Vec$Vec, -1, -2),
+									A2($author$project$Vec$Vec, 2, 1)
+								]);
+						default:
+							break _v0$8;
+					}
+				case 'RotTwo':
+					switch (_v0.b.$) {
+						case 'RotRight':
+							var _v7 = _v0.a;
+							var _v8 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, -2, 0),
+									A2($author$project$Vec$Vec, 1, 2),
+									A2($author$project$Vec$Vec, -2, -1)
+								]);
+						case 'RotLeft':
+							var _v9 = _v0.a;
+							var _v10 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 2, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, 2, -1),
+									A2($author$project$Vec$Vec, -1, 2)
+								]);
+						default:
+							break _v0$8;
+					}
+				case 'RotLeft':
+					switch (_v0.b.$) {
+						case 'RotTwo':
+							var _v11 = _v0.a;
+							var _v12 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -2, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, -2, 1),
+									A2($author$project$Vec$Vec, 1, -2)
+								]);
+						case 'RotZero':
+							var _v13 = _v0.a;
+							var _v14 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, -2, 0),
+									A2($author$project$Vec$Vec, 1, 2),
+									A2($author$project$Vec$Vec, -2, -1)
+								]);
+						default:
+							break _v0$8;
+					}
+				default:
+					switch (_v0.b.$) {
+						case 'RotRight':
+							var _v1 = _v0.a;
+							var _v2 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -2, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, -2, 1),
+									A2($author$project$Vec$Vec, 1, -2)
+								]);
+						case 'RotLeft':
+							var _v15 = _v0.a;
+							var _v16 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, 2, 0),
+									A2($author$project$Vec$Vec, -1, -2),
+									A2($author$project$Vec$Vec, 2, 1)
+								]);
+						default:
+							break _v0$8;
+					}
 			}
-			return _List_fromArray(
-				[
-					_Utils_Tuple2(0, 0)
-				]);
-		}();
-		return A2(
-			$elm$core$List$map,
-			A2($elm$core$Basics$composeL, $author$project$Vec$flipY, $author$project$Vec$fromTuple),
-			list);
+		}
+		return _List_fromArray(
+			[
+				A2($author$project$Vec$Vec, 0, 0)
+			]);
 	});
 var $author$project$Mino$getKickListJLSTZ = F2(
 	function (o1, o2) {
-		var list = function () {
-			var _v0 = _Utils_Tuple2(o1, o2);
-			_v0$8:
-			while (true) {
-				switch (_v0.a.$) {
-					case 'RotR':
-						switch (_v0.b.$) {
-							case 'Zero':
-								var _v3 = _v0.a;
-								var _v4 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(1, -1),
-										_Utils_Tuple2(0, 2),
-										_Utils_Tuple2(1, 2)
-									]);
-							case 'Two':
-								var _v5 = _v0.a;
-								var _v6 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(1, -1),
-										_Utils_Tuple2(0, 2),
-										_Utils_Tuple2(1, 2)
-									]);
-							default:
-								break _v0$8;
-						}
-					case 'Two':
-						switch (_v0.b.$) {
-							case 'RotR':
-								var _v7 = _v0.a;
-								var _v8 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(-1, 1),
-										_Utils_Tuple2(0, -2),
-										_Utils_Tuple2(-1, -2)
-									]);
-							case 'RotL':
-								var _v9 = _v0.a;
-								var _v10 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(1, 1),
-										_Utils_Tuple2(0, -2),
-										_Utils_Tuple2(1, -2)
-									]);
-							default:
-								break _v0$8;
-						}
-					case 'RotL':
-						switch (_v0.b.$) {
-							case 'Two':
-								var _v11 = _v0.a;
-								var _v12 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(-1, -1),
-										_Utils_Tuple2(0, 2),
-										_Utils_Tuple2(-1, 2)
-									]);
-							case 'Zero':
-								var _v13 = _v0.a;
-								var _v14 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(-1, -1),
-										_Utils_Tuple2(0, 2),
-										_Utils_Tuple2(-1, 2)
-									]);
-							default:
-								break _v0$8;
-						}
-					default:
-						switch (_v0.b.$) {
-							case 'RotR':
-								var _v1 = _v0.a;
-								var _v2 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(-1, 0),
-										_Utils_Tuple2(-1, 1),
-										_Utils_Tuple2(0, -2),
-										_Utils_Tuple2(-1, -2)
-									]);
-							case 'RotL':
-								var _v15 = _v0.a;
-								var _v16 = _v0.b;
-								return _List_fromArray(
-									[
-										_Utils_Tuple2(0, 0),
-										_Utils_Tuple2(1, 0),
-										_Utils_Tuple2(1, 1),
-										_Utils_Tuple2(0, -2),
-										_Utils_Tuple2(1, -2)
-									]);
-							default:
-								break _v0$8;
-						}
-				}
+		var _v0 = _Utils_Tuple2(o1, o2);
+		_v0$8:
+		while (true) {
+			switch (_v0.a.$) {
+				case 'RotRight':
+					switch (_v0.b.$) {
+						case 'RotZero':
+							var _v3 = _v0.a;
+							var _v4 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, 1, 1),
+									A2($author$project$Vec$Vec, 0, -2),
+									A2($author$project$Vec$Vec, 1, -2)
+								]);
+						case 'RotTwo':
+							var _v5 = _v0.a;
+							var _v6 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, 1, 1),
+									A2($author$project$Vec$Vec, 0, -2),
+									A2($author$project$Vec$Vec, 1, -2)
+								]);
+						default:
+							break _v0$8;
+					}
+				case 'RotTwo':
+					switch (_v0.b.$) {
+						case 'RotRight':
+							var _v7 = _v0.a;
+							var _v8 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, -1, -1),
+									A2($author$project$Vec$Vec, 0, 2),
+									A2($author$project$Vec$Vec, -1, 2)
+								]);
+						case 'RotLeft':
+							var _v9 = _v0.a;
+							var _v10 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, 1, -1),
+									A2($author$project$Vec$Vec, 0, 2),
+									A2($author$project$Vec$Vec, 1, 2)
+								]);
+						default:
+							break _v0$8;
+					}
+				case 'RotLeft':
+					switch (_v0.b.$) {
+						case 'RotTwo':
+							var _v11 = _v0.a;
+							var _v12 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, -1, 1),
+									A2($author$project$Vec$Vec, 0, -2),
+									A2($author$project$Vec$Vec, -1, -2)
+								]);
+						case 'RotZero':
+							var _v13 = _v0.a;
+							var _v14 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, -1, 1),
+									A2($author$project$Vec$Vec, 0, -2),
+									A2($author$project$Vec$Vec, -1, -2)
+								]);
+						default:
+							break _v0$8;
+					}
+				default:
+					switch (_v0.b.$) {
+						case 'RotRight':
+							var _v1 = _v0.a;
+							var _v2 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, -1, 0),
+									A2($author$project$Vec$Vec, -1, -1),
+									A2($author$project$Vec$Vec, 0, 2),
+									A2($author$project$Vec$Vec, -1, 2)
+								]);
+						case 'RotLeft':
+							var _v15 = _v0.a;
+							var _v16 = _v0.b;
+							return _List_fromArray(
+								[
+									A2($author$project$Vec$Vec, 0, 0),
+									A2($author$project$Vec$Vec, 1, 0),
+									A2($author$project$Vec$Vec, 1, -1),
+									A2($author$project$Vec$Vec, 0, 2),
+									A2($author$project$Vec$Vec, 1, 2)
+								]);
+						default:
+							break _v0$8;
+					}
 			}
-			return _List_fromArray(
-				[
-					_Utils_Tuple2(0, 0)
-				]);
-		}();
-		return A2(
-			$elm$core$List$map,
-			A2($elm$core$Basics$composeL, $author$project$Vec$flipY, $author$project$Vec$fromTuple),
-			list);
+		}
+		return _List_fromArray(
+			[
+				A2($author$project$Vec$Vec, 0, 0)
+			]);
 	});
 var $author$project$Mino$getKickList = F3(
 	function (o1, o2, mino) {
@@ -9096,30 +9067,6 @@ var $author$project$Mino$getKickList = F3(
 					]);
 			default:
 				return A2($author$project$Mino$getKickListJLSTZ, o1, o2);
-		}
-	});
-var $author$project$Mino$RotL = {$: 'RotL'};
-var $author$project$Mino$RotR = {$: 'RotR'};
-var $author$project$Mino$Two = {$: 'Two'};
-var $author$project$Mino$Zero = {$: 'Zero'};
-var $author$project$Mino$getOrient = F2(
-	function (r, mino) {
-		if (mino.$ === 'O') {
-			return $author$project$Mino$Zero;
-		} else {
-			var _v1 = $author$project$Mino$info(mino);
-			var rotMax = _v1.rotMax;
-			var _v2 = A2($elm$core$Basics$modBy, rotMax, r);
-			switch (_v2) {
-				case 0:
-					return $author$project$Mino$Zero;
-				case 1:
-					return $author$project$Mino$RotR;
-				case 2:
-					return $author$project$Mino$Two;
-				default:
-					return $author$project$Mino$RotL;
-			}
 		}
 	});
 var $author$project$Main$tryKickList = F4(
@@ -9137,11 +9084,10 @@ var $author$project$Main$tryKickList = F4(
 						pos: A2($author$project$Vec$add, state.pos, k),
 						rot: state.rot + dr
 					});
-				var _v1 = A2(
+				if (A2(
 					$author$project$Board$overlapped,
-					$author$project$Main$stateToPositions(newState),
-					board);
-				if (_v1.$ === 'Just') {
+					$author$project$Main$toAbsolute(newState),
+					board)) {
 					var $temp$kickList = ks,
 						$temp$dr = dr,
 						$temp$board = board,
@@ -9161,102 +9107,76 @@ var $author$project$Main$rotateIfPossible = F3(
 	function (dr, board, state) {
 		var rot = state.rot;
 		var mino = state.mino;
-		var o2 = A2($author$project$Mino$getOrient, rot + dr, mino);
-		var o1 = A2($author$project$Mino$getOrient, rot, mino);
+		var o2 = A2($author$project$Mino$getDirection, rot + dr, mino);
+		var o1 = A2($author$project$Mino$getDirection, rot, mino);
 		var kickList = A3($author$project$Mino$getKickList, o1, o2, mino);
 		return A4($author$project$Main$tryKickList, kickList, dr, board, state);
 	});
-var $author$project$Main$handleKey = function (model) {
-	var key = model.key;
-	var time = model.time;
-	var minoState = model.minoState;
-	var board = model.board;
-	_v0$7:
-	while (true) {
-		switch (key.$) {
-			case 'KeyNotPressed':
-				return model;
-			case 'KeyDowned':
-				switch (key.a.$) {
-					case 'Z':
-						var _v1 = key.a;
-						return _Utils_update(
-							model,
-							{
-								minoState: A2(
-									$elm$core$Maybe$map,
-									A2(
-										$elm$core$Basics$composeL,
-										$author$project$Main$startLifeTime,
-										A2($author$project$Main$rotateIfPossible, -1, board)),
-									minoState)
-							});
-					case 'X':
-						var _v2 = key.a;
-						return _Utils_update(
-							model,
-							{
-								minoState: A2(
-									$elm$core$Maybe$map,
-									A2(
-										$elm$core$Basics$composeL,
-										$author$project$Main$startLifeTime,
-										A2($author$project$Main$rotateIfPossible, 1, board)),
-									minoState)
-							});
-					case 'Left':
-						var _v3 = key.a;
-						return _Utils_update(
-							model,
-							{
-								minoState: A2(
-									$elm$core$Maybe$map,
-									A3($author$project$Main$moveIfPossible, -1, 0, board),
-									minoState)
-							});
-					case 'Right':
-						var _v4 = key.a;
-						return _Utils_update(
-							model,
-							{
-								minoState: A2(
-									$elm$core$Maybe$map,
-									A3($author$project$Main$moveIfPossible, 1, 0, board),
-									minoState)
-							});
-					case 'Up':
-						var _v5 = key.a;
-						return _Utils_update(
-							model,
-							{
-								minoState: A2(
-									$elm$core$Maybe$map,
-									A2(
-										$elm$core$Basics$composeL,
-										$author$project$Main$setLifeTime(0),
-										$author$project$Main$hardDrop(board)),
-									minoState)
-							});
-					default:
-						break _v0$7;
-				}
-			default:
-				if (key.a.$ === 'Down') {
-					var _v6 = key.a;
-					return (!A2($elm$core$Basics$modBy, 5, time)) ? _Utils_update(
-						model,
-						{
-							minoState: A2(
-								$elm$core$Maybe$map,
-								A3($author$project$Main$moveIfPossible, 0, 1, board),
-								minoState)
-						}) : model;
-				} else {
-					break _v0$7;
-				}
+var $author$project$Main$handleKeyX = F2(
+	function (state, model) {
+		var board = model.board;
+		var minoState = model.minoState;
+		if (state.$ === 'KeyPressed') {
+			return _Utils_update(
+				model,
+				{
+					minoState: A2(
+						$elm$core$Maybe$map,
+						A2(
+							$elm$core$Basics$composeL,
+							$author$project$Main$startLifeTime,
+							A2($author$project$Main$rotateIfPossible, 1, board)),
+						minoState)
+				});
+		} else {
+			return model;
 		}
-	}
-	return model;
+	});
+var $author$project$Main$handleKeyZ = F2(
+	function (state, model) {
+		var board = model.board;
+		var minoState = model.minoState;
+		if (state.$ === 'KeyPressed') {
+			return _Utils_update(
+				model,
+				{
+					minoState: A2(
+						$elm$core$Maybe$map,
+						A2(
+							$elm$core$Basics$composeL,
+							$author$project$Main$startLifeTime,
+							A2($author$project$Main$rotateIfPossible, -1, board)),
+						minoState)
+				});
+		} else {
+			return model;
+		}
+	});
+var $author$project$Main$handleKey = function (model) {
+	var keys = model.keys;
+	var _v0 = keys;
+	var z = _v0.z;
+	var x = _v0.x;
+	var left = _v0.left;
+	var right = _v0.right;
+	var up = _v0.up;
+	var down = _v0.down;
+	return A2(
+		$author$project$Main$handleKeyDown,
+		down,
+		A2(
+			$author$project$Main$handleKeyUp,
+			up,
+			A2(
+				$author$project$Main$handleKeyRight,
+				right,
+				A2(
+					$author$project$Main$handleKeyLeft,
+					left,
+					A2(
+						$author$project$Main$handleKeyX,
+						x,
+						A2($author$project$Main$handleKeyZ, z, model))))));
 };
 var $author$project$Main$initMinoState = function (mino) {
 	return {
@@ -9381,29 +9301,66 @@ var $author$project$Main$nextMino = function (model) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$KeyDowned = function (a) {
-	return {$: 'KeyDowned', a: a};
-};
-var $author$project$Main$KeyPressing = function (a) {
-	return {$: 'KeyPressing', a: a};
-};
-var $author$project$Main$updateKeyState = F2(
-	function (keyMay, state) {
-		if (keyMay.$ === 'Just') {
-			var newKey = keyMay.a;
-			switch (state.$) {
-				case 'KeyDowned':
-					var key = state.a;
-					return _Utils_eq(key, newKey) ? $author$project$Main$KeyPressing(key) : $author$project$Main$KeyDowned(newKey);
-				case 'KeyPressing':
-					var key = state.a;
-					return _Utils_eq(key, newKey) ? $author$project$Main$KeyPressing(key) : $author$project$Main$KeyDowned(newKey);
-				default:
-					return $author$project$Main$KeyDowned(newKey);
-			}
-		} else {
-			return $author$project$Main$KeyNotPressed;
+var $author$project$Main$updateKeyPress = F3(
+	function (key, keyDowned, flags) {
+		switch (key.$) {
+			case 'Z':
+				return _Utils_update(
+					flags,
+					{z: keyDowned});
+			case 'X':
+				return _Utils_update(
+					flags,
+					{x: keyDowned});
+			case 'Left':
+				return _Utils_update(
+					flags,
+					{left: keyDowned});
+			case 'Right':
+				return _Utils_update(
+					flags,
+					{right: keyDowned});
+			case 'Up':
+				return _Utils_update(
+					flags,
+					{up: keyDowned});
+			default:
+				return _Utils_update(
+					flags,
+					{down: keyDowned});
 		}
+	});
+var $author$project$Main$KeyPressed = {$: 'KeyPressed'};
+var $author$project$Main$KeyPressing = {$: 'KeyPressing'};
+var $author$project$Main$updateKeyState = F2(
+	function (keyDowned, state) {
+		switch (state.$) {
+			case 'KeyIdle':
+				return keyDowned ? $author$project$Main$KeyPressed : $author$project$Main$KeyIdle;
+			case 'KeyPressed':
+				return keyDowned ? $author$project$Main$KeyPressing : $author$project$Main$KeyIdle;
+			default:
+				return keyDowned ? $author$project$Main$KeyPressing : $author$project$Main$KeyIdle;
+		}
+	});
+var $author$project$Main$updateKeyStates = F2(
+	function (flags, state) {
+		var z = state.z;
+		var x = state.x;
+		var down = state.down;
+		var up = state.up;
+		var left = state.left;
+		var right = state.right;
+		return _Utils_update(
+			state,
+			{
+				down: A2($author$project$Main$updateKeyState, flags.down, down),
+				left: A2($author$project$Main$updateKeyState, flags.left, left),
+				right: A2($author$project$Main$updateKeyState, flags.right, right),
+				up: A2($author$project$Main$updateKeyState, flags.up, up),
+				x: A2($author$project$Main$updateKeyState, flags.x, x),
+				z: A2($author$project$Main$updateKeyState, flags.z, z)
+			});
 	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -9416,14 +9373,17 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							keyDown: $elm$core$Maybe$Just(newKey)
+							keyPress: A3($author$project$Main$updateKeyPress, newKey, true, model.keyPress)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'KeyUp':
+				var newKey = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{keyDown: $elm$core$Maybe$Nothing}),
+						{
+							keyPress: A3($author$project$Main$updateKeyPress, newKey, false, model.keyPress)
+						}),
 					$elm$core$Platform$Cmd$none);
 			case 'Tick':
 				return _Utils_Tuple2(
@@ -9437,7 +9397,7 @@ var $author$project$Main$update = F2(
 												return _Utils_update(
 													m,
 													{
-														key: A2($author$project$Main$updateKeyState, m.keyDown, m.key)
+														keys: A2($author$project$Main$updateKeyStates, m.keyPress, m.keys)
 													});
 											}(
 												$author$project$Main$elapseTime(model)))))))),
